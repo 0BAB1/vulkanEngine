@@ -11,6 +11,16 @@
 const uint32_t WIDTH = 800;
 const uint32_t HEIGHT = 600;
 
+const std::vector<const char*> validationLayers = {                                
+    "VK_LAYER_KHRONOS_validation"                                                   // Basic validation layer provided by khronos in vulkan SDK
+};
+
+#ifdef NDEBUG                                                                       // Check for debug mode to enable validation layers (or not)
+    const bool enableValidationLayers = false;
+#else
+    const bool enableValidationLayers = true;
+#endif
+
 class HelloTriangleApplication {
 public:
     void run() {
@@ -156,7 +166,34 @@ private:
         return indices;
     }
 
+    bool checkValidationLayerSupport(){
+        uint32_t layerCount;
+        vkEnumerateInstanceLayerProperties(&layerCount, nullptr);                   // Enumerate layes to initialize layer counter
+        std::vector<VkLayerProperties> availableLayers(layerCount);
+        vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data());    // Populate the vector array with instance's validation layers that are supported
+
+        // Actual check between supported layers AND required layers defined in validatioLayers const vector
+        for (const auto &validationLayer : validationLayers){
+            bool layerFound = false;
+            for(const auto &availableLayer : availableLayers){
+                if(strcmp(validationLayer, availableLayer.layerName) == 0) {
+                    layerFound = true;
+                    break;
+                }
+            }
+
+            if(!layerFound){
+                return false;
+            }
+        }
+        return true;
+    }
+
     void createInstance(){
+        if(enableValidationLayers && !checkValidationLayerSupport()){
+            throw std::runtime_error("Validation layers requested, but not available !");
+        }
+
         VkApplicationInfo appInfo{};                                                // Create appInfos object (optional)
         appInfo.sType               = VK_STRUCTURE_TYPE_APPLICATION_INFO;           // As usual, struct type
         appInfo.pApplicationName    = "Test Triangle";
