@@ -27,6 +27,7 @@ private:
     VkInstance instance;                                                            // VULKAN Instance handler
     VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;                               // Iniatte the picked GPU (to null for now)
     VkDevice device;                                                                // Logical device
+    VkQueue graphicsQueue;                                                          // Handle to the queue
 
     void initWindow(){
         //window init routine
@@ -51,7 +52,7 @@ private:
     }
 
     void createLogicalDevice(){
-        QueueFamilyIndices indices = findQueueFamilies(physicalDevice);             // re-find the queues fimilies specified in QueueFamilyIndices Struct
+        QueueFamilyIndices indices = findQueueFamilies(physicalDevice);             // Re-find the queues fimilies specified in QueueFamilyIndices Struct
 
         VkDeviceQueueCreateInfo queueCreateInfo{};                                  // Initiate an empty info struct for the queue creation
         queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;         // Inform our info structure type
@@ -67,6 +68,14 @@ private:
         createInfo.pQueueCreateInfos = &queueCreateInfo;                            // Give it pointers to other info structure we just made
         createInfo.queueCreateInfoCount = 1;
         createInfo.pEnabledFeatures = &deviceFeatures;
+
+        createInfo.enabledExtensionCount = 0;                                       // For older implemetations of vulkan
+
+        if (vkCreateDevice(physicalDevice, &createInfo, nullptr, &device) != VK_SUCCESS){
+            throw std::runtime_error("failed to create logical device !");
+        }
+
+        vkGetDeviceQueue(device, indices.graphicsFamily.value(), 0, &graphicsQueue);// Retrieve the queue handle to interact with it
     }
 
     void pickPhysicalDevice(){
@@ -195,6 +204,7 @@ private:
     }
 
     void cleanup() {
+        vkDestroyDevice(device, nullptr);
         vkDestroyInstance(instance, nullptr);
 
         glfwDestroyWindow(window);
